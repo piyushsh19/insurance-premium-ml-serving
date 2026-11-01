@@ -380,3 +380,98 @@ Use Swagger UI to test the `/predict` endpoint by submitting customer informatio
 - [x] POST `/predict` endpoint implemented
 - [ ] API execution and prediction testing
 
+## Step 3 — Streamlit Frontend
+Goal
+Build a simple interactive frontend using Streamlit. The frontend collects the customer's original information, sends it to the FastAPI POST /predict endpoint, and displays the predicted insurance premium category.
+Architecture
+Customer
+   |
+   v
+Streamlit UI
+(frontend/streamlit_app.py)
+   |
+   | HTTP POST with original customer JSON
+   v
+FastAPI
+POST /predict
+   |
+   v
+Pydantic validation + feature engineering
+   |
+   v
+Trained Scikit-learn pipeline
+(models/model.joblib)
+   |
+   v
+Prediction JSON
+   |
+   v
+Streamlit displays Low / Medium / High
+Project Structure
+frontend/
+└── streamlit_app.py
+Dependencies
+Install Streamlit and Requests:
+uv add streamlit requests
+Run the application
+Start the FastAPI backend in one terminal from the project root:
+uv run uvicorn app.app:app --reload
+Start Streamlit in a second terminal:
+uv run streamlit run frontend/streamlit_app.py
+Streamlit will print a local URL, usually:
+http://localhost:8501
+The frontend sends requests to:
+http://127.0.0.1:8000/predict
+To use a different API URL, set the INSURANCE_API_URL environment variable before starting Streamlit.
+
+macOS/Linux:
+export INSURANCE_API_URL="http://127.0.0.1:8000/predict"
+uv run streamlit run frontend/streamlit_app.py
+PowerShell:
+$env:INSURANCE_API_URL = "http://127.0.0.1:8000/predict"
+uv run streamlit run frontend/streamlit_app.py
+Frontend inputs
+The form collects the original customer fields:
+- Age
+- Weight (kg)
+- Height (m)
+- Annual income (LPA)
+- Smoking status
+- City
+- Occupation
+The frontend does not calculate BMI, age group, lifestyle risk, or city tier. It sends the original values to FastAPI, which validates the request and calculates those features before calling the model.
+API request example
+{
+  "age": 32,
+  "weight": 75.5,
+  "height": 1.75,
+  "income_lpa": 12.5,
+  "smoker": false,
+  "city": "Mumbai",
+  "occupation": "private_job"
+}
+API response example
+{
+  "predicted_category": "Medium"
+}
+The displayed category depends on the trained model and supplied dataset; this example is illustrative.
+Error handling
+The frontend handles common API failures:
+- API connection errors (backend not running or unreachable)
+- HTTP errors returned by FastAPI
+- Request timeouts
+- Invalid or unexpected JSON responses
+Concepts covered
+- Building interactive forms with Streamlit
+- st.number_input, st.selectbox, and st.text_input
+- Handling form submission with st.form
+- Sending JSON requests using Python Requests
+- Integrating a frontend with a REST API
+- Displaying prediction results and handling API errors
+- Configuring the API URL through an environment variable
+Step 3 Status
+- [x] Streamlit frontend implemented
+- [x] Original customer data submitted to FastAPI
+- [x] Prediction response displayed in the UI
+- [x] Basic API error handling implemented
+- [ ] End-to-end frontend and API testing
