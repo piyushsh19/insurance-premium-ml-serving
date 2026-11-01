@@ -1,0 +1,16 @@
+age,weight,height,income_lpa,smoker,city,occupation,insurance_premium_category
+25,60.5,1.65,4.5,False,Mumbai,private_job,Low
+32,75.5,1.75,12.5,True,Mumbai,private_job,High
+45,85.0,1.72,18.0,False,Delhi,government,Medium
+28,55.0,1.60,6.0,False,Bangalore,private_job,Low
+52,90.0,1.78,25.0,True,Delhi,business,High
+35,70.0,1.68,10.0,False,Pune,private_job,Medium
+60,95.0,1.70,30.0,True,Mumbai,business,High
+23,58.0,1.62,3.5,False,Hyderabad,student,Low
+40,80.0,1.75,15.0,True,Bangalore,private_job,High
+31,65.0,1.70,8.0,False,Chennai,government,Medium
+48,88.0,1.80,22.0,False,Pune,business,Medium
+27,62.0,1.66,5.5,False,Delhi,private_job,Low
+55,92.0,1.73,28.0,True,Hyderabad,business,High
+38,72.0,1.74,14.0,False,Mumbai,government,Medium
+29,68.0,1.69,9.0,True,Chennai,private_job,High
