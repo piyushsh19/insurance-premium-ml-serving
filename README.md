@@ -164,6 +164,8 @@ import joblib
 
 joblib.dump(pipeline, "../models/model.joblib")
 
+
+
 # Verify that the saved artifact can be loaded.
 loaded_model = joblib.load("../models/model.joblib")
 print(loaded_model.predict(X_test.head()))
@@ -188,6 +190,193 @@ Tech stack
 - joblib
 - uv for dependency and environment management
 - Jupyter Notebook
-FastAPI and Streamlit are planned for later project stages.
-Disclaimer
-This is an educational machine learning project. Predictions are based on the supplied dataset and illustrative feature-engineering rules. They must not be used to determine real insurance premiums or make actual underwriting decisions.
+
+## ## Step 2 — FastAPI Model Serving
+
+### Goal
+
+Expose the trained Scikit-learn model through a REST API using FastAPI. The API accepts original customer information, performs feature engineering, and returns the predicted insurance premium category.
+
+### Architecture
+
+```text
+Client Request (Original Customer Data)
+              |
+              v
+       FastAPI Endpoint
+          POST /predict
+              |
+              v
+       Pydantic Validation
+           UserInput
+              |
+              v
+       Feature Engineering
+       - BMI
+       - Age Group
+       - Lifestyle Risk
+       - City Tier
+              |
+              v
+       Pandas DataFrame
+              |
+              v
+       Trained ML Pipeline
+         model.joblib
+              |
+              v
+       Random Forest Model
+              |
+              v
+       Prediction Response
+       Low / Medium / High
+```
+
+### Project Structure
+
+```text
+app/
+├── __init__.py
+└── app.py
+```
+
+### Dependencies
+
+Install the required dependencies using `uv`:
+
+```bash
+uv add fastapi "uvicorn[standard]" pandas scikit-learn joblib
+```
+
+### Implementation Details
+
+**1. FastAPI Application**
+
+Created the FastAPI application with application metadata and lifecycle management.
+
+**2. Pydantic Input Validation**
+
+Implemented a `UserInput` model using `BaseModel`, `Annotated`, `Field`, and `Literal` to validate incoming customer information.
+
+Original input fields:
+
+- `age`
+- `weight`
+- `height`
+- `income_lpa`
+- `smoker`
+- `city`
+- `occupation`
+
+**3. Computed Features**
+
+Used Pydantic's `@computed_field` and `@property` decorators to calculate features automatically:
+
+| Feature | Calculation |
+|---|---|
+| BMI | Weight / Height² |
+| Age Group | Based on customer age |
+| Lifestyle Risk | Based on smoking status and BMI |
+| City Tier | Based on predefined city classifications |
+
+**4. Model Loading**
+
+Used `joblib.load()` to load the trained pipeline from `models/model.joblib`.
+
+The model is loaded once during FastAPI application startup using the lifespan context manager.
+
+**5. Prediction Endpoint**
+
+Implemented:
+
+```http
+POST /predict
+```
+
+The endpoint:
+- Accepts original customer data as JSON.
+- Validates the request using Pydantic.
+- Calculates engineered features.
+- Creates a pandas DataFrame.
+- Passes the DataFrame to the trained ML pipeline.
+- Returns the predicted insurance premium category.
+
+### Sample API Request
+
+```json
+{
+  "age": 32,
+  "weight": 75.5,
+  "height": 1.75,
+  "income_lpa": 12.5,
+  "smoker": false,
+  "city": "Mumbai",
+  "occupation": "private_job"
+}
+```
+
+### Sample API Response
+
+```json
+{
+  "predicted_category": "Medium"
+}
+```
+
+*The prediction above is illustrative. The actual result depends on the trained model.*
+
+### Available Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | API welcome message |
+| GET | `/health` | Check API and model status |
+| POST | `/predict` | Predict insurance premium category |
+
+### Run the Application
+
+Start the FastAPI development server from the project root:
+
+```bash
+uv run uvicorn app.app:app --reload
+```
+
+API base URL:
+
+```text
+http://127.0.0.1:8000
+```
+
+### API Documentation
+
+FastAPI automatically generates interactive Swagger documentation.
+
+Open:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Use Swagger UI to test the `/predict` endpoint by submitting customer information.
+
+### Concepts Covered
+
+- FastAPI application and REST endpoints
+- Pydantic BaseModel and request validation
+- Annotated, Field and Literal
+- Pydantic computed fields
+- Python properties and decorators
+- FastAPI lifespan events
+- Loading serialized ML models using joblib
+- Pandas DataFrame creation
+- Integrating Scikit-learn pipelines with REST APIs
+
+### Step 2 Status
+
+- [x] FastAPI application created
+- [x] Pydantic request validation implemented
+- [x] Feature engineering implemented
+- [x] Trained model loading implemented
+- [x] POST `/predict` endpoint implemented
+- [ ] API execution and prediction testing
+
