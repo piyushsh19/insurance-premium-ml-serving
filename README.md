@@ -475,3 +475,125 @@ Step 3 Status
 - [x] Prediction response displayed in the UI
 - [x] Basic API error handling implemented
 - [ ] End-to-end frontend and API testing
+
+
+### ## 🐳 Docker Deployment
+
+The Insurance Premium Prediction API is containerized using Docker to provide a consistent and portable runtime environment.
+
+### Docker Architecture
+
+```text
+             Docker Image
+                  |
+          Python 3.12 Slim
+                  |
+             Install uv
+                  |
+          Install Dependencies
+             (uv.lock)
+                  |
+          Copy Application
+                  |
+          Copy ML Model
+          (model.joblib)
+                  |
+          Start FastAPI
+                  |
+             Port 8000
+                  |
+          API Container
+                  |
+       ---------------------
+       |         |         |
+      /docs   /health   /predict
+```
+
+### Prerequisites
+
+- Docker Desktop installed and running.
+- Python 3.12 (for local development).
+- uv package manager.
+- Trained Scikit-learn model (`models/model.joblib`).
+
+### 1. Build Docker Image
+
+From the project root directory:
+
+```bash
+docker build -t insurance-premium-api:v1 .
+```
+
+### 2. Run Docker Container
+
+```bash
+docker run -d \
+  --name insurance-api \
+  -p 8000:8000 \
+  insurance-premium-api:v1
+```
+
+### 3. Verify Container
+
+Check running containers:
+
+```bash
+docker ps
+```
+
+Check application logs:
+
+```bash
+docker logs insurance-api
+```
+
+### 4. Access API
+
+Once the container is running, access the following endpoints:
+
+| Endpoint | Description |
+|---|---|
+| `http://localhost:8000/` | API welcome endpoint |
+| `http://localhost:8000/docs` | Interactive Swagger documentation |
+| `http://localhost:8000/health` | API and model health check |
+| `http://localhost:8000/predict` | Insurance premium prediction |
+
+### 5. Test Health Endpoint
+
+```bash
+curl http://localhost:8000/health
+```
+
+### 6. Stop and Remove Container
+
+```bash
+docker stop insurance-api
+docker rm insurance-api
+```
+
+### 7. Remove Docker Image
+
+```bash
+docker rmi insurance-premium-api:v1
+```
+
+### Docker Commands Reference
+
+| Command | Description |
+|---|---|
+| `docker images` | List Docker images |
+| `docker ps` | List running containers |
+| `docker ps -a` | List all containers |
+| `docker logs insurance-api` | View container logs |
+| `docker restart insurance-api` | Restart container |
+| `docker stats` | Monitor container resource usage |
+
+### Deployment Notes
+
+- Docker image includes the FastAPI application, production dependencies and trained ML model.
+- Dependencies are installed using the existing `uv.lock` file.
+- The application runs inside the container on port `8000`.
+- Streamlit frontend is currently run separately and is not included in this API image.
+- The trained model must be available at `models/model.joblib` before building the image.
+
+---
