@@ -3,14 +3,18 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import joblib
-import pandas as pd
+# import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, computed_field
+
+from app.schemas.prediction_response import PredictionResponse
+from app.services.predict import predict_insurance_premium
 
 
 # Resolve the model path from the project root, not the current terminal directory.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MODEL_PATH = PROJECT_ROOT / "models" / "model.joblib"
+MODEL_VERSION = "1.0.0"
 
 
 # Keep these lists identical to the city lists used during model training.
@@ -164,7 +168,7 @@ app = FastAPI(
         "Predict an insurance premium category from original customer data "
         "using a trained Scikit-learn pipeline."
     ),
-    version="1.0.0",
+    version=MODEL_VERSION,
     lifespan=lifespan,
 )
 
@@ -174,6 +178,7 @@ def home():
     return {
         "message": "Insurance Premium Prediction API is running",
         "docs": "/docs",
+        "health": "/health",
     }
 
 
@@ -183,46 +188,37 @@ def health(request: Request):
     return {"status": "ok" if model_loaded else "model_not_loaded"}
 
 
-@app.post("/predict")
-def predict_premium(data: UserInput, request: Request):
-    """Accept original customer data, engineer features, and predict a category."""
+@app.post(
+    "/predict",
+    response_model=PredictionResponse,
+    summary="Predict an insurance premium category",
+)
+def predict_premium(
+    data: UserInput,
+    request: Request,
+) -> PredictionResponse:
 
     model = getattr(request.app.state, "model", None)
+
     if model is None:
         raise HTTPException(
             status_code=503,
-            detail="The ML model is not loaded. Check the API startup logs.",
+            detail="The ML model is not loaded. Check API startup logs.",
         )
 
-    # These names and values must match the features used to train the pipeline.
-    input_df = pd.DataFrame(
-        [
-            {
-                "bmi": data.bmi,
-                "age_group": data.age_group,
-                "lifestyle_risk": data.lifestyle_risk,
-                "city_tier": data.city_tier,
-                "income_lpa": data.income_lpa,
-                "occupation": data.occupation,
-            }
-        ],
-        columns=[
-            "bmi",
-            "age_group",
-            "lifestyle_risk",
-            "city_tier",
-            "income_lpa",
-            "occupation",
-        ],
-    )
-
     try:
-        prediction = model.predict(input_df)[0]
+        return predict_insurance_premium(
+            model=model,
+            data=data,
+            model_version=getattr(
+                request.app.state,
+                "model_version",
+                MODEL_VERSION,
+            ),
+        )
+
     except Exception as exc:
-        # Keep internal model details in server logs, not in the API response.
         raise HTTPException(
             status_code=500,
             detail="Prediction failed. Check the API server logs.",
         ) from exc
-
-    return {"predicted_category": str(prediction)}
